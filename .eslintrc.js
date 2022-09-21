@@ -49,7 +49,7 @@ module.exports = {
     'jsdoc/no-multi-asterisks': [2, { allowWhitespace: true }],
     'jsdoc/no-restricted-syntax': 'off',
     'jsdoc/no-types': 'off',
-    'jsdoc/no-undefined-types': 2,
+    'jsdoc/no-undefined-types': 1,
     'jsdoc/require-asterisk-prefix': [2, 'always'],
     'jsdoc/require-description-complete-sentence': 2,
     'jsdoc/require-description': [2, { descriptionStyle: 'tag' }],

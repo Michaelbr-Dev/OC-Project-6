@@ -6,18 +6,27 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const userRoutes = require('./routes/User');
 
-// Database connection
+/**
+ * @description It's loading the environment variables from the .env file.
+ */
+require('dotenv').config();
+
+/**
+ * @description Mongoose connection using .env file to mask password.
+ */
 mongoose
-  .connect(
-    'mongodb+srv://OC-P6:tZASAmtoXIdkKPD1@cluster0.wvucmfo.mongodb.net/?retryWrites=true&w=majority',
-    { useNewUrlParser: true, useUnifiedTopology: true },
-  )
+  .connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('Connexion à MongoDB réussie !'))
   .catch(() => console.log('Connexion à MongoDB échouée !'));
 
 const app = express();
 
+/**
+ * @description Middleware Header to bypass errors by unblocking certain CORS security systems,
+ *              so that everyone can make requests from their browser.
+ */
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader(
@@ -27,5 +36,8 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   next();
 });
+
+app.use(bodyParser.json());
+app.use('/api/auth', userRoutes);
 
 module.exports = app;
