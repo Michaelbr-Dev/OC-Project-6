@@ -58,10 +58,12 @@ const errorHandler = (error) => {
   const bind = typeof address === 'string' ? `pipe ${address}` : `port ${port}`;
   switch (error.code) {
     case 'EACCES':
+      // eslint-disable-next-line no-console
       console.error(`${bind} require elevated privileges.`);
       process.exit(1);
       break;
     case 'EADDRINUSE':
+      // eslint-disable-next-line no-console
       console.error(`${bind} is already in use.`);
       process.exit(1);
       break;
@@ -83,6 +85,7 @@ server.on('error', errorHandler);
 server.on('listening', () => {
   const address = server.address();
   const bind = typeof address === 'string' ? `pipe ${address}` : `port ${port}`;
+  // eslint-disable-next-line no-console
   console.log(`Listening on ${bind}`);
 });
 

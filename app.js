@@ -18,9 +18,10 @@ require('dotenv').config();
  */
 mongoose
   .connect(process.env.DB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  /* eslint-disable no-console */
   .then(() => console.log('Connexion à MongoDB réussie !'))
   .catch(() => console.log('Connexion à MongoDB échouée !'));
-
+/* eslint-enable no-console */
 const app = express();
 
 /**
