@@ -105,3 +105,6 @@ dist
 
 # JsDocs
 docs/
+
+# Images assets
+images/
