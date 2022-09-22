@@ -68,6 +68,30 @@ exports.signup = async (req, res) => {
  * @param {express.Response} res               - Response object.
  */
 exports.login = async (req, res) => {
+  if (!validator.isEmail(req.body.email)) {
+    return res.status(400).json({ message: 'Adresse email invalide' });
+  }
+
+  if (
+    !validator.isStrongPassword(req.body.password, {
+      minLength: 8,
+      minLowercase: 1,
+      minUppercase: 1,
+      minNumbers: 1,
+      minSymbols: 1,
+    })
+  ) {
+    return res.status(400).json({
+      message:
+        'Mot de passe requis : 8 caractères minimum, au moins 1 Majuscule, 1 minuscule, 1 caractère spécial, sans espace.',
+    });
+  }
+
+  const userEmail = await User.findOne({ email: req.body.email });
+  if (!userEmail) {
+    return res.status(404).json({ message: "L'adresse email n'existe pas" });
+  }
+
   const user = await User.findOne({ email: req.body.email }).catch((error) =>
     res.status(500).json({ error }),
   );
