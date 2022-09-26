@@ -6,7 +6,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const path = require('path');
+
 const userRoutes = require('./routes/User');
+const sauceRoutes = require('./routes/Sauces');
 
 /**
  * @description It's loading the environment variables from the .env file.
@@ -40,5 +43,7 @@ app.use((req, res, next) => {
 
 app.use(bodyParser.json());
 app.use('/api/auth', userRoutes);
+app.use('/api/sauces', sauceRoutes);
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 module.exports = app;

@@ -18,3 +18,16 @@ exports.getAllSauce = (req, res) => {
     .then((sauces) => res.status(200).json(sauces))
     .catch((error) => res.status(400).json({ error }));
 };
+
+/**
+ * @function getOneSauce
+ * @description Return one sauces in database with his ID.
+ *
+ * @param {object} req - Request object.
+ * @param {object} res - Response object.
+ */
+exports.getOneSauce = (req, res) => {
+  Sauce.findOne({ _id: req.params.id })
+    .then((sauce) => res.status(200).json(sauce))
+    .catch((error) => res.status(404).json({ error }));
+};

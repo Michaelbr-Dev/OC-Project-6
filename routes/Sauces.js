@@ -11,5 +11,6 @@ const router = express.Router();
 const sauceCtrl = require('../controllers/sauces');
 
 router.get('/', auth, sauceCtrl.getAllSauce);
+router.get('/:id', auth, sauceCtrl.getOneSauce);
 
 module.exports = router;
