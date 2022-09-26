@@ -99,3 +99,72 @@ exports.deleteSauce = (req, res) => {
       res.status(500).json({ error });
     });
 };
+
+// TODO: Write function Docs
+exports.likeDislike = (req, res) => {
+  const { userId } = req.auth;
+  // eslint-disable-next-line no-underscore-dangle
+  const sauceId = req.params.id;
+
+  Sauce.findOne({ _id: sauceId }).then((sauce) => {
+    switch (req.body.like) {
+      case 1:
+        // eslint-disable-next-line no-param-reassign
+        sauce.likes += 1;
+        sauce.usersLiked.push(userId);
+
+        if (sauce.usersDisliked.includes(userId)) {
+          // eslint-disable-next-line no-param-reassign
+          sauce.dislikes -= 1;
+          const index = sauce.usersDisliked.indexOf(userId);
+          sauce.usersDisliked.splice(index, 1);
+        }
+        break;
+
+      case 0:
+        if (sauce.usersLiked.includes(userId)) {
+          // eslint-disable-next-line no-param-reassign
+          sauce.likes -= 1;
+          const index = sauce.usersLiked.indexOf(userId);
+          sauce.usersLiked.splice(index, 1);
+        } else if (sauce.usersDisliked.includes(userId)) {
+          const index = sauce.usersDisliked.indexOf(userId);
+          sauce.usersDisliked.splice(index, 1);
+        }
+        break;
+
+      case -1:
+        // eslint-disable-next-line no-param-reassign
+        sauce.dislikes += 1;
+        sauce.usersDisliked.push(userId);
+
+        if (sauce.usersLiked.includes(req.auth.userId)) {
+          // eslint-disable-next-line no-param-reassign
+          sauce.likes -= 1;
+          const index = sauce.usersLiked.indexOf(userId);
+          sauce.usersLiked.splice(index, 1);
+        }
+        break;
+
+      default:
+        res.status(404).json({ message: 'Type de like inconnu !' });
+        break;
+    }
+
+    sauce
+      .updateOne(
+        { _id: sauceId },
+        {
+          likes: sauce.likes,
+          dislikes: sauce.dislikes,
+          usersLiked: sauce.usersLiked,
+          usersDisliked: sauce.usersDisliked,
+          _id: sauceId,
+        },
+      )
+      .then(() => {
+        res.status(200).json({ message: 'Like modifié !' });
+      })
+      .catch((error) => res.status(400).json({ error }));
+  });
+};
