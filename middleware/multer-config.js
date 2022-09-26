@@ -34,9 +34,10 @@ const storage = multer.diskStorage({
    * @param {Function}        callback - Function to tell multer about the image name.
    */
   filename: (req, file, callback) => {
-    const name = file.originalname.split(' ').join('_');
     const extension = MINE_TYPES[file.mimetype];
-    callback(null, `${name}${Date.now()}.${extension}`);
+    const nameFile = file.originalname.replace(`.${extension}`, '');
+    const name = nameFile.split(' ').join('_');
+    callback(null, `${name}-${Date.now()}.${extension}`);
   },
 });
 
