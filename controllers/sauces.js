@@ -10,8 +10,8 @@ const Sauce = require('../models/Sauce');
  * @function getSauce
  * @description Return all the sauces in database.
  *
- * @param {object} req - Request object.
- * @param {object} res - Response object.
+ * @param {object} req - Express Request object.
+ * @param {object} res - Express Response object.
  */
 exports.getAllSauce = (req, res) => {
   Sauce.find()
@@ -23,8 +23,10 @@ exports.getAllSauce = (req, res) => {
  * @function getOneSauce
  * @description Return one sauces in database with his ID.
  *
- * @param {object} req - Request object.
- * @param {object} res - Response object.
+ * @param {object} req          - Express request object.
+ * @param {string} req.param.id - Sauce Id in URL.
+ *
+ * @param {object} res          - Express response object.
  */
 exports.getOneSauce = (req, res) => {
   Sauce.findOne({ _id: req.params.id })
@@ -32,7 +34,16 @@ exports.getOneSauce = (req, res) => {
     .catch((error) => res.status(404).json({ error }));
 };
 
-// TODO: Write function Docs
+/**
+ * @function createSauce
+ * @description Function that create a new sauce object in database.
+ *
+ * @param {object} req            - Express request object.
+ * @param {object} req.body       - Request body object.
+ * @param {object} req.body.sauce - Request sauce object.
+ *
+ * @param {object} res            - Express response object.
+ */
 exports.createSauce = (req, res) => {
   const sauceObject = JSON.parse(req.body.sauce);
   // eslint-disable-next-line no-underscore-dangle
@@ -47,11 +58,21 @@ exports.createSauce = (req, res) => {
   });
   sauce
     .save()
-    .then(() => res.status(201).json({ message: 'Sauce enregistrée !' }))
+    .then(() => res.status(201).json({ message: 'Sauce registered !' }))
     .catch((error) => res.status(400).json({ error }));
 };
 
-// TODO: Write function Docs
+/**
+ * @function modifySauce
+ * @description Function to modifying the sauce object.
+ *
+ * @param {object} req            - Express Request object.
+ * @param {object} req.file       - Request file object.
+ * @param {object} req.body       - Request body object.
+ * @param {object} req.body.sauce - Request sauce object.
+ *
+ * @param {object} res            - Express Response object.
+ */
 exports.modifySauce = (req, res) => {
   const sauceObject = req.file
     ? {
@@ -65,11 +86,14 @@ exports.modifySauce = (req, res) => {
   Sauce.findOne({ _id: req.params.id })
     .then((sauce) => {
       if (sauce.userId !== req.auth.userId) {
-        res.status(401).json({ message: 'Non autorisé' });
+        res.status(401).json({ error: 'Unauthorised' });
       } else {
-        Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
-          .then(() => res.status(200).json({ message: 'Objet modifié!' }))
-          .catch((error) => res.status(401).json({ error }));
+        const filename = sauce.imageUrl.split('/images/')[1];
+        fs.unlink(`images/${filename}`, () => {
+          Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
+            .then(() => res.status(200).json({ message: 'Sauce updated !' }))
+            .catch((error) => res.status(401).json({ error }));
+        });
       }
     })
     .catch((error) => {
@@ -77,19 +101,29 @@ exports.modifySauce = (req, res) => {
     });
 };
 
-// TODO: Write function Docs
+/**
+ * @function deleteSauce
+ * @description Function that remove the sauce object from the database.
+ *
+ * @param {object} req             - Express request object.
+ * @param {object} req.params      - Request parameters.
+ * @param {object} req.params.id   - Sauce Id in URL.
+ * @param {object} req.auth        - Authenticated user's token informations.
+ * @param {object} req.auth.userId - Authenticated user's Id.
+ *
+ * @param {object} res             - Express response object.
+ */
 exports.deleteSauce = (req, res) => {
   Sauce.findOne({ _id: req.params.id })
     .then((sauce) => {
       if (sauce.userId !== req.auth.userId) {
-        res.status(401).json({ message: 'Non autorisé' });
+        res.status(401).json({ error: 'Unauthorised' });
       } else {
         const filename = sauce.imageUrl.split('/images/')[1];
-        console.log(filename);
         fs.unlink(`images/${filename}`, () => {
           Sauce.deleteOne({ _id: req.params.id })
             .then(() => {
-              res.status(200).json({ message: 'Objet supprimé !' });
+              res.status(200).json({ message: 'Objet deleted !' });
             })
             .catch((error) => res.status(401).json({ error }));
         });
@@ -100,7 +134,14 @@ exports.deleteSauce = (req, res) => {
     });
 };
 
-// TODO: Write function Docs
+// TODO: update Jsdocs
+/**
+ * @function likeDislike
+ * @description Function that allows you to like or dislike a sauce.
+ *
+ * @param {object} req - Express request object.
+ * @param {object} res - Express response object.
+ */
 exports.likeDislike = (req, res) => {
   const { userId } = req.auth;
   // eslint-disable-next-line no-underscore-dangle
@@ -109,61 +150,53 @@ exports.likeDislike = (req, res) => {
   Sauce.findOne({ _id: sauceId }).then((sauce) => {
     switch (req.body.like) {
       case 1:
-        // eslint-disable-next-line no-param-reassign
-        sauce.likes += 1;
-        sauce.usersLiked.push(userId);
-
-        if (sauce.usersDisliked.includes(userId)) {
-          // eslint-disable-next-line no-param-reassign
-          sauce.dislikes -= 1;
-          const index = sauce.usersDisliked.indexOf(userId);
-          sauce.usersDisliked.splice(index, 1);
+        if (sauce.usersLiked.includes(userId)) {
+          return res.status(409).json({ error: 'User already liked' });
         }
+        if (sauce.usersDisliked.includes(userId)) {
+          return res.status(400).json({ error: 'User must remove dislike before liking' });
+        }
+        sauce.usersLiked.push(userId);
         break;
 
       case 0:
         if (sauce.usersLiked.includes(userId)) {
-          // eslint-disable-next-line no-param-reassign
-          sauce.likes -= 1;
           const index = sauce.usersLiked.indexOf(userId);
           sauce.usersLiked.splice(index, 1);
-        } else if (sauce.usersDisliked.includes(userId)) {
+          break;
+        }
+        if (sauce.usersDisliked.includes(userId)) {
           const index = sauce.usersDisliked.indexOf(userId);
           sauce.usersDisliked.splice(index, 1);
+          break;
         }
-        break;
+        return res.status(404).json({ error: 'Nothing to suppress' });
 
       case -1:
-        // eslint-disable-next-line no-param-reassign
-        sauce.dislikes += 1;
-        sauce.usersDisliked.push(userId);
-
-        if (sauce.usersLiked.includes(req.auth.userId)) {
-          // eslint-disable-next-line no-param-reassign
-          sauce.likes -= 1;
-          const index = sauce.usersLiked.indexOf(userId);
-          sauce.usersLiked.splice(index, 1);
+        if (sauce.usersLiked.includes(userId)) {
+          return res.status(400).json({ error: 'User must remove like before disliking' });
         }
+        if (sauce.usersDisliked.includes(userId)) {
+          return res.status(409).json({ error: 'User already disliked' });
+        }
+        sauce.usersDisliked.push(userId);
         break;
 
       default:
-        res.status(404).json({ message: 'Type de like inconnu !' });
-        break;
+        return res.status(400).json({ message: 'Unknow like type' });
     }
+    /* eslint-disable no-param-reassign */
+    sauce.likes = sauce.usersLiked.length;
+    sauce.dislikes = sauce.usersDisliked.length;
+    /* eslint-enable no-param-reassign */
 
-    sauce
-      .updateOne(
-        { _id: sauceId },
-        {
-          likes: sauce.likes,
-          dislikes: sauce.dislikes,
-          usersLiked: sauce.usersLiked,
-          usersDisliked: sauce.usersDisliked,
-          _id: sauceId,
-        },
-      )
+    return sauce
+      .save()
       .then(() => {
-        res.status(200).json({ message: 'Like modifié !' });
+        if (req.body.like === 0) {
+          return res.status(200).json({ message: 'Reaction deleted !' });
+        }
+        return res.status(201).json({ message: 'Reaction created !' });
       })
       .catch((error) => res.status(400).json({ error }));
   });
