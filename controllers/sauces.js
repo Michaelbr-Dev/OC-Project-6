@@ -134,13 +134,122 @@ exports.deleteSauce = (req, res) => {
     });
 };
 
-// TODO: update Jsdocs
+/**
+ * @function like
+ * @description It checks if the user has already liked the sauce, if not, it adds the user to the
+ * list of users who liked the sauce, and updates the number of likes and dislikes.
+ *
+ * @param   {object} sauce  - The sauce object that we want to update.
+ *
+ * @param   {string} userId - The id of the user who liked the sauce.
+ *
+ * @param   {object} res    - Express response object.
+ *
+ * @returns {object}        - The return object.
+ */
+function like(sauce, userId, res) {
+  if (sauce.usersLiked.includes(userId)) {
+    return res.status(409).json({ error: 'User already liked' });
+  }
+  if (sauce.usersDisliked.includes(userId)) {
+    return res.status(400).json({ error: 'User must remove dislike before liking' });
+  }
+  sauce.usersLiked.push(userId);
+
+  /* eslint-disable no-param-reassign */
+  sauce.likes = sauce.usersLiked.length;
+  sauce.dislikes = sauce.usersDisliked.length;
+  /* eslint-enable no-param-reassign */
+
+  return sauce
+    .save()
+    .then(() => res.status(201).json({ message: 'Reaction created !' }))
+    .catch((error) => res.status(400).json({ error }));
+}
+
+/**
+ * @function reset
+ * @description It deletes the user's reaction to a sauce, and updates the number of likes and dislikes.
+ *
+ * @param   {object} sauce  - The sauce object that we want to update.
+ *
+ * @param   {string} userId - The id of the user who liked the sauce.
+ *
+ * @param   {object} res    - Express response object.
+ *
+ * @returns {object}        - The return object.
+ */
+function reset(sauce, userId, res) {
+  if (sauce.usersLiked.includes(userId)) {
+    const index = sauce.usersLiked.indexOf(userId);
+    sauce.usersLiked.splice(index, 1);
+
+    return sauce
+      .save()
+      .then(() => res.status(200).json({ message: 'Reaction deleted !' }))
+      .catch((error) => res.status(400).json({ error }));
+  }
+  if (sauce.usersDisliked.includes(userId)) {
+    const index = sauce.usersDisliked.indexOf(userId);
+    sauce.usersDisliked.splice(index, 1);
+
+    /* eslint-disable no-param-reassign */
+    sauce.likes = sauce.usersLiked.length;
+    sauce.dislikes = sauce.usersDisliked.length;
+    /* eslint-enable no-param-reassign */
+
+    return sauce
+      .save()
+      .then(() => res.status(200).json({ message: 'Reaction deleted !' }))
+      .catch((error) => res.status(400).json({ error }));
+  }
+  return res.status(404).json({ error: 'Nothing to suppress' });
+}
+
+/**
+ * @function dislike
+ * @description It checks if the user has already liked or disliked the sauce, and if not, it adds
+ * the user to the list of users who disliked the sauce.
+ *
+ * @param   {object} sauce  - The sauce object that we want to update.
+ *
+ * @param   {string} userId - The id of the user who liked the sauce.
+ *
+ * @param   {object} res    - Express response object.
+ *
+ * @returns {object}        - The return object.
+ */
+function dislike(sauce, userId, res) {
+  if (sauce.usersLiked.includes(userId)) {
+    return res.status(400).json({ error: 'User must remove like before disliking' });
+  }
+  if (sauce.usersDisliked.includes(userId)) {
+    return res.status(409).json({ error: 'User already disliked' });
+  }
+  sauce.usersDisliked.push(userId);
+
+  /* eslint-disable no-param-reassign */
+  sauce.likes = sauce.usersLiked.length;
+  sauce.dislikes = sauce.usersDisliked.length;
+  /* eslint-enable no-param-reassign */
+
+  return sauce
+    .save()
+    .then(() => res.status(201).json({ message: 'Reaction created !' }))
+    .catch((error) => res.status(400).json({ error }));
+}
+
 /**
  * @function likeDislike
- * @description Function that allows you to like or dislike a sauce.
+ * @description A function that is called when a user likes or dislikes a sauce.
  *
- * @param {object} req - Express request object.
- * @param {object} res - Express response object.
+ * @param {object} req             - Express request object.
+ * @param {object} req.params      - Request parameters.
+ * @param {object} req.params.id   - Sauce Id in URL.
+ * @param {object} req.auth        - Authenticated user's token informations.
+ * @param {object} req.auth.userId - Authenticated user's Id.
+ *
+ * @param {object} res             - Express response object.
  */
 exports.likeDislike = (req, res) => {
   const { userId } = req.auth;
@@ -150,54 +259,20 @@ exports.likeDislike = (req, res) => {
   Sauce.findOne({ _id: sauceId }).then((sauce) => {
     switch (req.body.like) {
       case 1:
-        if (sauce.usersLiked.includes(userId)) {
-          return res.status(409).json({ error: 'User already liked' });
-        }
-        if (sauce.usersDisliked.includes(userId)) {
-          return res.status(400).json({ error: 'User must remove dislike before liking' });
-        }
-        sauce.usersLiked.push(userId);
+        like(sauce, userId, res);
         break;
 
       case 0:
-        if (sauce.usersLiked.includes(userId)) {
-          const index = sauce.usersLiked.indexOf(userId);
-          sauce.usersLiked.splice(index, 1);
-          break;
-        }
-        if (sauce.usersDisliked.includes(userId)) {
-          const index = sauce.usersDisliked.indexOf(userId);
-          sauce.usersDisliked.splice(index, 1);
-          break;
-        }
-        return res.status(404).json({ error: 'Nothing to suppress' });
+        reset(sauce, userId, res);
+        break;
 
       case -1:
-        if (sauce.usersLiked.includes(userId)) {
-          return res.status(400).json({ error: 'User must remove like before disliking' });
-        }
-        if (sauce.usersDisliked.includes(userId)) {
-          return res.status(409).json({ error: 'User already disliked' });
-        }
-        sauce.usersDisliked.push(userId);
+        dislike(sauce, userId, res);
         break;
 
       default:
-        return res.status(400).json({ message: 'Unknow like type' });
+        res.status(400).json({ message: 'Unknow reaction type' });
+        break;
     }
-    /* eslint-disable no-param-reassign */
-    sauce.likes = sauce.usersLiked.length;
-    sauce.dislikes = sauce.usersDisliked.length;
-    /* eslint-enable no-param-reassign */
-
-    return sauce
-      .save()
-      .then(() => {
-        if (req.body.like === 0) {
-          return res.status(200).json({ message: 'Reaction deleted !' });
-        }
-        return res.status(201).json({ message: 'Reaction created !' });
-      })
-      .catch((error) => res.status(400).json({ error }));
   });
 };
