@@ -3,7 +3,7 @@
  * @author Michael Briquet <contact@michaelbr-dev.fr>
  */
 
-const bcrypt = require('bcrypt'); // Need to hash password
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken'); // Need to manage session token
 const validator = require('validator');
 const User = require('../models/User');
@@ -12,12 +12,12 @@ const User = require('../models/User');
  * @function signup
  * @description Creating a new user.
  *
- * @param {Express.Request}  req               - Request object.
- * @param {object}           req.body          - Request body.
- * @param {string}           req.body.email    - Email of the new user.
- * @param {string}           req.body.password - Password of the new user.
+ * @param {object} req               - Express request object.
+ * @param {object} req.body          - Request body.
+ * @param {string} req.body.email    - Email of the new user.
+ * @param {string} req.body.password - Password of the new user.
  *
- * @param {Express.Response} res               - Response object.
+ * @param {object} res               - Express response object.
  */
 exports.signup = async (req, res) => {
   if (
@@ -60,12 +60,12 @@ exports.signup = async (req, res) => {
  * and if the password is correct. If the user exists and the password is correct, it returns the
  * userId and a token.
  *
- * @param {express.Request}  req               - Request object.
- * @param {object}           req.body          - Request body.
- * @param {string}           req.body.email    - Email of the user.
- * @param {string}           req.body.password - Password of the user.
+ * @param {object} req               - Express request object.
+ * @param {object} req.body          - Request body.
+ * @param {string} req.body.email    - Email of the user.
+ * @param {string} req.body.password - Password of the user.
  *
- * @param {express.Response} res               - Response object.
+ * @param {object} res               - Express response object.
  */
 exports.login = async (req, res) => {
   if (!validator.isEmail(req.body.email)) {
