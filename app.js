@@ -7,6 +7,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const path = require('path');
+const helmet = require('helmet');
 
 const userRoutes = require('./routes/User');
 const sauceRoutes = require('./routes/Sauces');
@@ -42,8 +43,11 @@ app.use((req, res, next) => {
 });
 
 app.use(bodyParser.json());
+app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }));
+
 app.use('/api/auth', userRoutes);
 app.use('/api/sauces', sauceRoutes);
+
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
 module.exports = app;
