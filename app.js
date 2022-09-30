@@ -32,7 +32,7 @@ const app = express();
  * @description Middleware Header to bypass errors by unblocking certain CORS security systems,
  *              so that everyone can make requests from their browser.
  */
-app.use((req, res, next) => {
+app.use((_req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader(
     'Access-Control-Allow-Headers',
