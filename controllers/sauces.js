@@ -10,13 +10,14 @@ const Sauce = require('../models/Sauce');
  * @function getSauce
  * @description Return all the sauces in database.
  *
- * @param {object} req - Express Request object.
- * @param {object} res - Express Response object.
+ * @param {object} _req - Express Request object.
+ * @param {object} res  - Express Response object.
  */
-exports.getAllSauce = (req, res) => {
-  Sauce.find()
-    .then((sauces) => res.status(200).json(sauces))
-    .catch((error) => res.status(400).json({ error }));
+exports.getAllSauce = async (_req, res) => {
+  const sauces = await Sauce.find().catch((error) => {
+    res.status(500).json({ error });
+  });
+  res.status(200).json(sauces);
 };
 
 /**
@@ -28,10 +29,11 @@ exports.getAllSauce = (req, res) => {
  *
  * @param {object} res          - Express response object.
  */
-exports.getOneSauce = (req, res) => {
-  Sauce.findOne({ _id: req.params.id })
-    .then((sauce) => res.status(200).json(sauce))
-    .catch((error) => res.status(404).json({ error }));
+exports.getOneSauce = async (req, res) => {
+  const oneSauce = await Sauce.findOne({ _id: req.params.id }).catch((error) =>
+    res.status(500).json({ error }),
+  );
+  res.status(200).json(oneSauce);
 };
 
 /**
@@ -44,7 +46,7 @@ exports.getOneSauce = (req, res) => {
  *
  * @param {object} res            - Express response object.
  */
-exports.createSauce = (req, res) => {
+exports.createSauce = async (req, res) => {
   const sauceObject = JSON.parse(req.body.sauce);
   // eslint-disable-next-line no-underscore-dangle
   delete sauceObject._id;
@@ -56,10 +58,8 @@ exports.createSauce = (req, res) => {
     usersLiked: [],
     usersDisliked: [],
   });
-  sauce
-    .save()
-    .then(() => res.status(201).json({ message: 'Sauce registered !' }))
-    .catch((error) => res.status(400).json({ error }));
+  await sauce.save().catch((error) => res.status(500).json({ error }));
+  res.status(201).json({ message: 'Sauce registered !' });
 };
 
 /**
@@ -73,7 +73,7 @@ exports.createSauce = (req, res) => {
  *
  * @param {object} res            - Express Response object.
  */
-exports.modifySauce = (req, res) => {
+exports.modifySauce = async (req, res) => {
   const sauceObject = req.file
     ? {
         ...JSON.parse(req.body.sauce),
@@ -83,22 +83,20 @@ exports.modifySauce = (req, res) => {
 
   // eslint-disable-next-line no-underscore-dangle
   delete sauceObject._userId;
-  Sauce.findOne({ _id: req.params.id })
-    .then((sauce) => {
-      if (sauce.userId !== req.auth.userId) {
-        res.status(401).json({ error: 'Unauthorised' });
-      } else {
-        const filename = sauce.imageUrl.split('/images/')[1];
-        fs.unlink(`images/${filename}`, () => {
-          Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
-            .then(() => res.status(200).json({ message: 'Sauce updated !' }))
-            .catch((error) => res.status(401).json({ error }));
-        });
-      }
-    })
-    .catch((error) => {
-      res.status(400).json({ error });
+  const sauce = await Sauce.findOne({ _id: req.params.id }).catch((error) => {
+    res.status(500).json({ error });
+  });
+  if (sauce.userId !== req.auth.userId) {
+    res.status(403).json({ error: 'Forbidden' });
+  } else {
+    const filename = sauce.imageUrl.split('/images/')[1];
+    fs.unlink(`images/${filename}`, async () => {
+      await Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id }).catch(
+        (error) => res.status(500).json({ error }),
+      );
+      res.status(200).json({ message: 'Sauce updated !' });
     });
+  }
 };
 
 /**
@@ -113,25 +111,21 @@ exports.modifySauce = (req, res) => {
  *
  * @param {object} res             - Express response object.
  */
-exports.deleteSauce = (req, res) => {
-  Sauce.findOne({ _id: req.params.id })
-    .then((sauce) => {
-      if (sauce.userId !== req.auth.userId) {
-        res.status(401).json({ error: 'Unauthorised' });
-      } else {
-        const filename = sauce.imageUrl.split('/images/')[1];
-        fs.unlink(`images/${filename}`, () => {
-          Sauce.deleteOne({ _id: req.params.id })
-            .then(() => {
-              res.status(200).json({ message: 'Objet deleted !' });
-            })
-            .catch((error) => res.status(401).json({ error }));
-        });
-      }
-    })
-    .catch((error) => {
-      res.status(500).json({ error });
+exports.deleteSauce = async (req, res) => {
+  const sauce = Sauce.findOne({ _id: req.params.id }).catch((error) => {
+    res.status(500).json({ error });
+  });
+  if (sauce.userId !== req.auth.userId) {
+    res.status(403).json({ error: 'Forbidden' });
+  } else {
+    const filename = sauce.imageUrl.split('/images/')[1];
+    fs.unlink(`images/${filename}`, async () => {
+      await Sauce.deleteOne({ _id: req.params.id }).catch((error) =>
+        res.status(500).json({ error }),
+      );
+      res.status(200).json({ message: 'Objet deleted !' });
     });
+  }
 };
 
 /**
@@ -147,7 +141,7 @@ exports.deleteSauce = (req, res) => {
  *
  * @returns {object}        - The return object.
  */
-function like(sauce, userId, res) {
+async function like(sauce, userId, res) {
   if (sauce.usersLiked.includes(userId)) {
     return res.status(409).json({ error: 'User already liked' });
   }
@@ -161,10 +155,8 @@ function like(sauce, userId, res) {
   sauce.dislikes = sauce.usersDisliked.length;
   /* eslint-enable no-param-reassign */
 
-  return sauce
-    .save()
-    .then(() => res.status(201).json({ message: 'Reaction created !' }))
-    .catch((error) => res.status(400).json({ error }));
+  await sauce.save().catch((error) => res.status(500).json({ error }));
+  return res.status(201).json({ message: 'Reaction created !' });
 }
 
 /**
@@ -179,15 +171,13 @@ function like(sauce, userId, res) {
  *
  * @returns {object}        - The return object.
  */
-function reset(sauce, userId, res) {
+async function reset(sauce, userId, res) {
   if (sauce.usersLiked.includes(userId)) {
     const index = sauce.usersLiked.indexOf(userId);
     sauce.usersLiked.splice(index, 1);
 
-    return sauce
-      .save()
-      .then(() => res.status(200).json({ message: 'Reaction deleted !' }))
-      .catch((error) => res.status(400).json({ error }));
+    await sauce.save().catch((error) => res.status(500).json({ error }));
+    return res.status(200).json({ message: 'Reaction deleted !' });
   }
   if (sauce.usersDisliked.includes(userId)) {
     const index = sauce.usersDisliked.indexOf(userId);
@@ -198,10 +188,8 @@ function reset(sauce, userId, res) {
     sauce.dislikes = sauce.usersDisliked.length;
     /* eslint-enable no-param-reassign */
 
-    return sauce
-      .save()
-      .then(() => res.status(200).json({ message: 'Reaction deleted !' }))
-      .catch((error) => res.status(400).json({ error }));
+    await sauce.save().catch((error) => res.status(500).json({ error }));
+    return res.status(200).json({ message: 'Reaction deleted !' });
   }
   return res.status(404).json({ error: 'Nothing to suppress' });
 }
@@ -219,7 +207,7 @@ function reset(sauce, userId, res) {
  *
  * @returns {object}        - The return object.
  */
-function dislike(sauce, userId, res) {
+async function dislike(sauce, userId, res) {
   if (sauce.usersLiked.includes(userId)) {
     return res.status(400).json({ error: 'User must remove like before disliking' });
   }
@@ -233,10 +221,8 @@ function dislike(sauce, userId, res) {
   sauce.dislikes = sauce.usersDisliked.length;
   /* eslint-enable no-param-reassign */
 
-  return sauce
-    .save()
-    .then(() => res.status(201).json({ message: 'Reaction created !' }))
-    .catch((error) => res.status(400).json({ error }));
+  await sauce.save().catch((error) => res.status(500).json({ error }));
+  return res.status(201).json({ message: 'Reaction created !' });
 }
 
 /**
@@ -251,28 +237,29 @@ function dislike(sauce, userId, res) {
  *
  * @param {object} res             - Express response object.
  */
-exports.likeDislike = (req, res) => {
+exports.likeDislike = async (req, res) => {
   const { userId } = req.auth;
   // eslint-disable-next-line no-underscore-dangle
   const sauceId = req.params.id;
 
-  Sauce.findOne({ _id: sauceId }).then((sauce) => {
-    switch (req.body.like) {
-      case 1:
-        like(sauce, userId, res);
-        break;
+  const sauce = await Sauce.findOne({ _id: sauceId }).catch((error) =>
+    res.status(500).json({ error }),
+  );
+  switch (req.body.like) {
+    case 1:
+      like(sauce, userId, res);
+      break;
 
-      case 0:
-        reset(sauce, userId, res);
-        break;
+    case 0:
+      reset(sauce, userId, res);
+      break;
 
-      case -1:
-        dislike(sauce, userId, res);
-        break;
+    case -1:
+      dislike(sauce, userId, res);
+      break;
 
-      default:
-        res.status(400).json({ message: 'Unknow reaction type' });
-        break;
-    }
-  });
+    default:
+      res.status(400).json({ message: 'Unknow reaction type' });
+      break;
+  }
 };
