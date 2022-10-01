@@ -70,7 +70,7 @@ const validSauceManufacturer = (manufacturer) => {
  * @returns {boolean}             - True if the sauce description is in valid form.
  */
 const validSauceDescription = (description) => {
-  const regexInput = /^[a-záàâäãåçéèêëíìîïñóòôöõúùûüýÿæœ' -]{2,}$/i;
+  const regexInput = /^[a-záàâäãåçéèêëíìîïñóòôöõúùûüýÿæœ@#!?' -]{2,}$/i;
   return regexInput.test(description);
 };
 
