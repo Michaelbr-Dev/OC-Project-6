@@ -3,7 +3,7 @@
  * @author Michael Briquet <contact@michaelbr-dev.fr>
  */
 
-const fs = require('fs');
+const fs = require('fs').promises;
 const Sauce = require('../models/Sauce');
 
 /**
@@ -74,28 +74,26 @@ exports.createSauce = async (req, res) => {
  * @param {object} res            - Express Response object.
  */
 exports.modifySauce = async (req, res) => {
-  const sauceObject = req.file
-    ? {
-        ...JSON.parse(req.body.sauce),
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
-      }
-    : { ...req.body };
+  try {
+    const sauceObject = req.file
+      ? {
+          ...JSON.parse(req.body.sauce),
+          imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
+        }
+      : { ...req.body };
 
-  // eslint-disable-next-line no-underscore-dangle
-  delete sauceObject._userId;
-  const sauce = await Sauce.findOne({ _id: req.params.id }).catch((error) => {
-    res.status(500).json({ error });
-  });
-  if (sauce.userId !== req.auth.userId) {
-    res.status(403).json({ error: 'Forbidden' });
-  } else {
+    // eslint-disable-next-line no-underscore-dangle
+    delete sauceObject._userId;
+    const sauce = await Sauce.findOne({ _id: req.params.id });
+    if (sauce.userId !== req.auth.userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
     const filename = sauce.imageUrl.split('/images/')[1];
-    fs.unlink(`images/${filename}`, async () => {
-      await Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id }).catch(
-        (error) => res.status(500).json({ error }),
-      );
-      res.status(200).json({ message: 'Sauce updated !' });
-    });
+    await fs.unlink(`images/${filename}`);
+    await Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id });
+    return res.status(200).json({ message: 'Sauce updated !' });
+  } catch (error) {
+    return res.status(500).json({ error });
   }
 };
 
@@ -112,19 +110,18 @@ exports.modifySauce = async (req, res) => {
  * @param {object} res             - Express response object.
  */
 exports.deleteSauce = async (req, res) => {
-  const sauce = Sauce.findOne({ _id: req.params.id }).catch((error) => {
-    res.status(500).json({ error });
-  });
-  if (sauce.userId !== req.auth.userId) {
-    res.status(403).json({ error: 'Forbidden' });
-  } else {
+  try {
+    const sauce = await Sauce.findOne({ _id: req.params.id });
+
+    if (sauce.userId !== req.auth.userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
     const filename = sauce.imageUrl.split('/images/')[1];
-    fs.unlink(`images/${filename}`, async () => {
-      await Sauce.deleteOne({ _id: req.params.id }).catch((error) =>
-        res.status(500).json({ error }),
-      );
-      res.status(200).json({ message: 'Objet deleted !' });
-    });
+    await fs.unlink(`images/${filename}`);
+    await Sauce.deleteOne({ _id: req.params.id });
+    return res.status(200).json({ message: 'Sauce deleted !' });
+  } catch (error) {
+    return res.status(500).json({ error });
   }
 };
 
