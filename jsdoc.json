@@ -1,13 +1,14 @@
 {
   "tags": {
-    "dictionaries": ["jsdoc"]
+    "dictionaries": ["jsdoc"],
+    "allowUnknownTags": ["category"]
   },
   "source": {
     "include": ["./", "README.md"],
     "includePattern": ".js$",
     "excludePattern": "node_modules"
   },
-  "plugins": ["plugins/markdown"],
+  "plugins": ["plugins/markdown", "node_modules/better-docs/category"],
   "opts": {
     "encoding": "utf8",
     "template": "node_modules/better-docs",

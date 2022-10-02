@@ -1,6 +1,8 @@
 /**
  * @file Manage app.
  * @author Michael Briquet <contact@michaelbr-dev.fr>
+ *
+ * @module Middleware/Auth
  */
 
 const jwt = require('jsonwebtoken');

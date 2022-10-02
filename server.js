@@ -1,6 +1,8 @@
 /**
  * @file Manage server.
  * @author Michael Briquet <contact@michaelbr-dev.fr>
+ *
+ * @module Server
  */
 
 /**

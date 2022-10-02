@@ -1,6 +1,8 @@
 /**
  * @file Manage app.
  * @author Michael Briquet <contact@michaelbr-dev.fr>
+ *
+ * @module Controller/Users
  */
 
 const bcrypt = require('bcrypt');
