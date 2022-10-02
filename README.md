@@ -29,10 +29,6 @@ If Piiquante's product manager wants to eventually turn the review app into an o
 
 The deadline is reasonable, so you decide to accept the project.
 
-## Project informations
-
-### Back end Prerequisites
-
 ### Back end Installation
 
 1. Clone this repo.
@@ -45,4 +41,3 @@ The server should run on localhost with default port 3000. If the server runs on
 
 - Front End repository: [Front End Code](https://github.com/OpenClassrooms-Student-Center/Web-Developer-P6)
 - Code Doc: [Piiquante code documentation]()
-- OpenAPI Doc [Piiquante API documentation]()
