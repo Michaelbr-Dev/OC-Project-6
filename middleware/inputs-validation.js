@@ -46,7 +46,7 @@ const validMail = (email) => {
  * @returns {boolean}      - True if the sauce name is in valid form.
  */
 const validSauceName = (name) => {
-  const regexInput = /^[a-záàâäãåçéèêëíìîïñóòôöõúùûüýÿæœ' -]{2,}$/i;
+  const regexInput = /^[a-zA-Zà-üÀ-Ü0-9’,:!?. -]+$/i;
   return regexInput.test(name);
 };
 
@@ -59,7 +59,7 @@ const validSauceName = (name) => {
  * @returns {boolean}              - True if the sauce manufacturer is in valid form.
  */
 const validSauceManufacturer = (manufacturer) => {
-  const regexInput = /^[a-záàâäãåçéèêëíìîïñóòôöõúùûüýÿæœ' -]{2,}$/i;
+  const regexInput = /^[a-zA-Zà-üÀ-Ü0-9’,:!?. -]+$/i;
   return regexInput.test(manufacturer);
 };
 
@@ -72,7 +72,7 @@ const validSauceManufacturer = (manufacturer) => {
  * @returns {boolean}             - True if the sauce description is in valid form.
  */
 const validSauceDescription = (description) => {
-  const regexInput = /^[a-záàâäãåçéèêëíìîïñóòôöõúùûüýÿæœ:@#!?' -]{2,}$/i;
+  const regexInput = /^[a-zA-Zà-üÀ-Ü0-9’,:!?. -]+$/i;
   return regexInput.test(description);
 };
 
@@ -85,7 +85,7 @@ const validSauceDescription = (description) => {
  * @returns {boolean}            - True if the sauce main pepper is in valid form.
  */
 const validSauceMainPepper = (mainPepper) => {
-  const regexInput = /^[a-záàâäãåçéèêëíìîïñóòôöõúùûüýÿæœ' -]{2,}$/i;
+  const regexInput = /^[a-zA-Zà-üÀ-Ü0-9’,:!?. -]+$/i;
   return regexInput.test(mainPepper);
 };
 
