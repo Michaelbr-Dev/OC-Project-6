@@ -91,7 +91,9 @@ exports.modifySauce = async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
     const filename = sauce.imageUrl.split('/images/')[1];
-    await fs.unlink(`images/${filename}`);
+    if (req.file) {
+      await fs.unlink(`images/${filename}`);
+    }
     await Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id });
     return res.status(200).json({ message: 'Sauce updated !' });
   } catch (error) {
